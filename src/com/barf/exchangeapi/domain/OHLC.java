@@ -6,21 +6,22 @@ import java.time.LocalDateTime;
 public class OHLC {
 
   public final LocalDateTime date;
-  public final BigDecimal open;
-  public final BigDecimal high;
-  public final BigDecimal low;
-  public final BigDecimal close;
+  public final Price open;
+  public final Price high;
+  public final Price low;
+  public final Price close;
 
   private OHLC(final Builder builder) {
     this.date = builder.date;
-    this.open = builder.open;
-    this.high = builder.high;
-    this.low = builder.low;
-    this.close = builder.close;
+    this.open = new Price(builder.open, builder.currency);
+    this.high = new Price(builder.high, builder.currency);
+    this.low = new Price(builder.low, builder.currency);
+    this.close = new Price(builder.close, builder.currency);
   }
 
   public static class Builder {
     private LocalDateTime date;
+    private Currency currency;
     private BigDecimal open;
     private BigDecimal high;
     private BigDecimal low;
@@ -32,6 +33,11 @@ public class OHLC {
 
     public Builder setDate(final LocalDateTime date) {
       this.date = date;
+      return this;
+    }
+
+    public Builder setCurrency(final Currency currency) {
+      this.currency = currency;
       return this;
     }
 

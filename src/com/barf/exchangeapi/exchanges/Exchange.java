@@ -1,15 +1,14 @@
 package com.barf.exchangeapi.exchanges;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-import com.barf.exchangeapi.domain.Currency;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
+import com.barf.exchangeapi.domain.Volume;
 
 public interface Exchange {
 
@@ -23,7 +22,7 @@ public interface Exchange {
 
   // user data
 
-  public Map<Currency, BigDecimal> getBalance() throws ApiException;
+  public Set<Volume> getBalance() throws ApiException;
 
   public List<Order> getOpen() throws ApiException;
 

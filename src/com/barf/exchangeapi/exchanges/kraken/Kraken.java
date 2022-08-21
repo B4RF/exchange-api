@@ -2,7 +2,6 @@ package com.barf.exchangeapi.exchanges.kraken;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -12,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +23,7 @@ import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
+import com.barf.exchangeapi.domain.Volume;
 import com.barf.exchangeapi.exchanges.ApiException;
 import com.barf.exchangeapi.exchanges.ApiRequest;
 import com.barf.exchangeapi.exchanges.Exchange;
@@ -69,10 +70,13 @@ public class Kraken implements Exchange {
     final JSONObject json = this.callEndpoint(Method.TICKER, input);
 
     final String resultPair = this.getCurrencyPairName(pair);
-    final BigDecimal ask = json.getJSONObject("result").getJSONObject(resultPair).getJSONArray("a").getBigDecimal(0);
-    final BigDecimal bid = json.getJSONObject("result").getJSONObject(resultPair).getJSONArray("b").getBigDecimal(0);
+    final JSONObject result = json.getJSONObject("result").getJSONObject(resultPair);
 
-    return new Ticker(ask, bid);
+    return new Ticker.Builder()
+        .setCurrency(pair.quote)
+        .setAsk(result.getJSONArray("a").getBigDecimal(0))
+        .setBid(result.getJSONArray("b").getBigDecimal(0))
+        .build();
   }
 
   @Override
@@ -97,6 +101,7 @@ public class Kraken implements Exchange {
 
       final OHLC ohlc = new OHLC.Builder()
           .setDate(Utils.secondsToDate(entry.getLong(0)))
+          .setCurrency(pair.quote)
           .setOpen(entry.getBigDecimal(1))
           .setHigh(entry.getBigDecimal(2))
           .setLow(entry.getBigDecimal(3))
@@ -110,7 +115,7 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public Map<Currency, BigDecimal> getBalance() throws ApiException {
+  public Set<Volume> getBalance() throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 

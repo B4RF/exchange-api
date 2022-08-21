@@ -1,15 +1,14 @@
 package com.barf.exchangeapi.exchanges.gdax;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-import com.barf.exchangeapi.domain.Currency;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
+import com.barf.exchangeapi.domain.Volume;
 import com.barf.exchangeapi.exchanges.ApiException;
 import com.barf.exchangeapi.exchanges.Exchange;
 
@@ -31,7 +30,7 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public Map<Currency, BigDecimal> getBalance() throws ApiException {
+  public Set<Volume> getBalance() throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
