@@ -2,10 +2,11 @@ package com.barf.exchangeapi.exchanges.gdax;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.barf.exchangeapi.domain.Currency;
+import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
@@ -25,7 +26,7 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public Collection<OHLC> getOHLC() throws ApiException {
+  public List<OHLC> getOHLC(final Interval interval, final LocalDateTime since) throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
@@ -35,12 +36,12 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public Collection<Order> getOpen() throws ApiException {
+  public List<Order> getOpen() throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Collection<Order> getClosed() throws ApiException {
+  public List<Order> getClosed() throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 

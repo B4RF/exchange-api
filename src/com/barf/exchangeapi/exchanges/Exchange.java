@@ -2,10 +2,11 @@ package com.barf.exchangeapi.exchanges;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.barf.exchangeapi.domain.Currency;
+import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
@@ -18,15 +19,15 @@ public interface Exchange {
 
   public Ticker getTicker() throws ApiException;
 
-  public Collection<OHLC> getOHLC() throws ApiException;
+  public List<OHLC> getOHLC(Interval interval, LocalDateTime since) throws ApiException;
 
   // user data
 
   public Map<Currency, BigDecimal> getBalance() throws ApiException;
 
-  public Collection<Order> getOpen() throws ApiException;
+  public List<Order> getOpen() throws ApiException;
 
-  public Collection<Order> getClosed() throws ApiException;
+  public List<Order> getClosed() throws ApiException;
 
   public boolean createOrder(Order order) throws ApiException;
 

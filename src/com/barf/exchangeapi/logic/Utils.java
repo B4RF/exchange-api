@@ -6,6 +6,10 @@ import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Base64;
 
 import javax.crypto.Mac;
@@ -69,5 +73,13 @@ public class Utils {
 
   public static String urlEncode(final String input) throws UnsupportedEncodingException {
     return URLEncoder.encode(input, Utils.UTF8);
+  }
+
+  public static LocalDateTime secondsToDate(final long timeInSeconds) {
+    return LocalDateTime.ofInstant(Instant.ofEpochSecond(timeInSeconds), ZoneId.systemDefault());
+  }
+
+  public static long dateToSeconds(final LocalDateTime date) {
+    return date.toInstant(ZoneOffset.UTC).getEpochSecond();
   }
 }
