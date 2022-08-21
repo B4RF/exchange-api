@@ -14,24 +14,24 @@ public interface Exchange {
 
   // market data
 
-  public LocalDateTime getServerTime();
+  public LocalDateTime getServerTime() throws ApiException;
 
-  public Ticker getTicker();
+  public Ticker getTicker() throws ApiException;
 
-  public Collection<OHLC> getOHLC();
+  public Collection<OHLC> getOHLC() throws ApiException;
 
   // user data
 
-  public Map<Currency, BigDecimal> getBalance();
+  public Map<Currency, BigDecimal> getBalance() throws ApiException;
 
-  public Collection<Order> getOpen();
+  public Collection<Order> getOpen() throws ApiException;
 
-  public Collection<Order> getClosed();
+  public Collection<Order> getClosed() throws ApiException;
 
-  public Order getOrder(String id);
+  public boolean createOrder(Order order) throws ApiException;
 
-  public boolean addOrder(Order order);
+  public Order getOrder(String id) throws ApiException;
 
-  public boolean cancelOrder(String id);
+  public boolean cancelOrder(String id) throws ApiException;
 
 }

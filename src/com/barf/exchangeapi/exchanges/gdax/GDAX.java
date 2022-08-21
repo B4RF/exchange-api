@@ -9,62 +9,54 @@ import com.barf.exchangeapi.domain.Currency;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.Ticker;
+import com.barf.exchangeapi.exchanges.ApiException;
 import com.barf.exchangeapi.exchanges.Exchange;
 
 public class GDAX implements Exchange {
 
   @Override
-  public LocalDateTime getServerTime() {
-    // TODO Auto-generated method stub
-    return null;
+  public LocalDateTime getServerTime() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Ticker getTicker() {
-    // TODO Auto-generated method stub
-    return null;
+  public Ticker getTicker() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Collection<OHLC> getOHLC() {
-    // TODO Auto-generated method stub
-    return null;
+  public Collection<OHLC> getOHLC() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Map<Currency, BigDecimal> getBalance() {
-    // TODO Auto-generated method stub
-    return null;
+  public Map<Currency, BigDecimal> getBalance() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Collection<Order> getOpen() {
-    // TODO Auto-generated method stub
-    return null;
+  public Collection<Order> getOpen() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Collection<Order> getClosed() {
-    // TODO Auto-generated method stub
-    return null;
+  public Collection<Order> getClosed() throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public Order getOrder(final String id) {
-    // TODO Auto-generated method stub
-    return null;
+  public boolean createOrder(final Order order) throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public boolean addOrder(final Order order) {
-    // TODO Auto-generated method stub
-    return false;
+  public Order getOrder(final String id) throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public boolean cancelOrder(final String id) {
-    // TODO Auto-generated method stub
-    return false;
+  public boolean cancelOrder(final String id) throws ApiException {
+    throw new ApiException("endpoint not implemented");
   }
 
 }
