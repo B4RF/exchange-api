@@ -25,3 +25,11 @@ java {
 	withSourcesJar()
 	withJavadocJar()
 }
+
+jar {
+	from sourceSets.main.allSource
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
