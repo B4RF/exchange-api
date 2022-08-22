@@ -1,7 +1,12 @@
 package com.barf.exchangeapi.domain;
 
 public enum Currency {
-  EUR("\u20ac"), XBT("\u20bf");
+
+  //@formatter:off
+  EUR("\u20ac"),
+  XBT("\u20bf"),
+  XDG("\u00D0");
+  //@formatter:on
 
   String unicode;
 

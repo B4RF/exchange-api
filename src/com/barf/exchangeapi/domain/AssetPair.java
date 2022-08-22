@@ -1,13 +1,16 @@
 package com.barf.exchangeapi.domain;
 
-public enum CurrencyPair {
+public enum AssetPair {
 
-  XBTEUR(Currency.XBT, Currency.EUR);
+  //@formatter:off
+  XBTEUR(Currency.XBT, Currency.EUR),
+  XDGEUR(Currency.XDG, Currency.EUR);
+  //@formatter:on
 
   public Currency base;
   public Currency quote;
 
-  private CurrencyPair(final Currency baseCurrency, final Currency quoteCurrency) {
+  private AssetPair(final Currency baseCurrency, final Currency quoteCurrency) {
     this.base = baseCurrency;
     this.quote = quoteCurrency;
   }

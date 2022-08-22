@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,11 +18,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.barf.exchangeapi.domain.AssetPair;
 import com.barf.exchangeapi.domain.Currency;
-import com.barf.exchangeapi.domain.CurrencyPair;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
+import com.barf.exchangeapi.domain.OrderAction;
+import com.barf.exchangeapi.domain.OrderStatus;
+import com.barf.exchangeapi.domain.OrderType;
+import com.barf.exchangeapi.domain.Price;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
 import com.barf.exchangeapi.exchanges.ApiException;
@@ -55,33 +60,31 @@ public class Kraken implements Exchange {
   @Override
   public LocalDateTime getServerTime() throws ApiException {
     final JSONObject json = this.callEndpoint(Method.TIME, null);
-    final long timeInSeconds = json.getJSONObject("result").getLong("unixtime");
+    final long timeInSeconds = json.getLong("unixtime");
 
     return Utils.secondsToDate(timeInSeconds);
   }
 
   @Override
   public Ticker getTicker() throws ApiException {
-    final CurrencyPair pair = CurrencyPair.XBTEUR;
+    final AssetPair pair = AssetPair.XBTEUR;
 
     final Map<String, String> input = new HashMap<>();
     input.put("pair", pair.name());
 
     final JSONObject json = this.callEndpoint(Method.TICKER, input);
-
-    final String resultPair = this.getCurrencyPairName(pair);
-    final JSONObject result = json.getJSONObject("result").getJSONObject(resultPair);
+    final JSONObject currencyPair = json.getJSONObject(this.getPairName(pair));
 
     return new Ticker.Builder()
         .setCurrency(pair.quote)
-        .setAsk(result.getJSONArray("a").getBigDecimal(0))
-        .setBid(result.getJSONArray("b").getBigDecimal(0))
+        .setAsk(currencyPair.getJSONArray("a").getBigDecimal(0))
+        .setBid(currencyPair.getJSONArray("b").getBigDecimal(0))
         .build();
   }
 
   @Override
   public List<OHLC> getOHLC(final Interval interval, final LocalDateTime since) throws ApiException {
-    final CurrencyPair pair = CurrencyPair.XBTEUR;
+    final AssetPair pair = AssetPair.XBTEUR;
 
     final Map<String, String> input = new HashMap<>();
     input.put("pair", pair.name());
@@ -91,13 +94,11 @@ public class Kraken implements Exchange {
     }
 
     final JSONObject json = this.callEndpoint(Method.OHLC, input);
+    final JSONArray currencyPair = json.getJSONArray(this.getPairName(pair));
 
-    final String resultPair = this.getCurrencyPairName(pair);
-    final JSONArray result = json.getJSONObject("result").getJSONArray(resultPair);
     final List<OHLC> ohlcList = new ArrayList<>();
-
-    for (int i = 0; i < result.length(); i++) {
-      final JSONArray entry = result.getJSONArray(i);
+    for (int i = 0; i < currencyPair.length(); i++) {
+      final JSONArray entry = currencyPair.getJSONArray(i);
 
       final OHLC ohlc = new OHLC.Builder()
           .setDate(Utils.secondsToDate(entry.getLong(0)))
@@ -116,17 +117,58 @@ public class Kraken implements Exchange {
 
   @Override
   public Set<Volume> getBalance() throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final JSONObject json = this.callEndpoint(Method.BALANCE, null);
+
+    final Set<Volume> balances = new HashSet<>();
+    for (final Entry<Currency, String> entry : Kraken.CURRENCY_NAMES.entrySet()) {
+      if (json.has(entry.getValue())) {
+        balances.add(new Volume(json.getBigDecimal(entry.getValue()), entry.getKey()));
+      }
+    }
+
+    return balances;
   }
 
   @Override
   public List<Order> getOpen() throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final JSONObject json = this.callEndpoint(Method.OPEN_ORDERS, null);
+    final JSONObject open = json.getJSONObject("open");
+
+    final List<Order> openOrders = new ArrayList<>();
+
+    if ((open != null) && (open.length() > 0)) {
+      for (final String id : open.keySet()) {
+        openOrders.add(this.fromJSON(id, open.getJSONObject(id)));
+      }
+    }
+
+    return openOrders;
   }
 
   @Override
-  public List<Order> getClosed() throws ApiException {
-    throw new ApiException("endpoint not implemented");
+  public List<Order> getClosed(final LocalDateTime since) throws ApiException {
+    final Map<String, String> input = new HashMap<>();
+    if (since != null) {
+      input.put("since", String.valueOf(Utils.dateToSeconds(since)));
+    }
+    input.put("closetime", "close");
+
+    final JSONObject json = this.callEndpoint(Method.CLOSED_ORDERS, input);
+    final JSONObject closed = json.getJSONObject("closed");
+
+    final ArrayList<Order> closedOrders = new ArrayList<>();
+
+    if ((closed != null) && (closed.length() > 0)) {
+      for (final String id : closed.keySet()) {
+        final JSONObject order = closed.getJSONObject(id);
+
+        if (order.getString("status").equals("closed")) {
+          closedOrders.add(this.fromJSON(id, order));
+        }
+      }
+    }
+
+    return closedOrders;
   }
 
   @Override
@@ -142,6 +184,44 @@ public class Kraken implements Exchange {
   @Override
   public boolean cancelOrder(final String id) throws ApiException {
     throw new ApiException("endpoint not implemented");
+  }
+
+  private Order fromJSON(final String id, final JSONObject json) {
+    final JSONObject descr = json.getJSONObject("descr");
+
+    final AssetPair assetPair = AssetPair.valueOf(descr.getString("pair"));
+    final OrderType orderType = OrderType.valueOf(descr.getString("ordertype").toUpperCase());
+
+    final Currency volumeCurrency = json.getString("oflags").contains("viqc") ? assetPair.quote : assetPair.base;
+
+    Order.Builder builder = new Order.Builder()
+        .setId(id)
+        .setStatus(OrderStatus.valueOf(json.getString("status").toUpperCase()))
+        .setPair(assetPair)
+        .setAction(OrderAction.valueOf(descr.getString("type").toUpperCase()))
+        .setType(orderType)
+        .setVolume(new Volume(json.getBigDecimal("vol"), volumeCurrency))
+        .setExecVolume(new Volume(json.getBigDecimal("vol_exec"), volumeCurrency));
+
+    if (orderType == OrderType.LIMIT) {
+      builder = builder.setPrice(new Price(descr.getBigDecimal("price"), assetPair.quote));
+    } else if (json.has("price")) {
+      builder = builder.setPrice(new Price(json.getBigDecimal("price"), assetPair.quote));
+    }
+
+    final long start = json.getLong("opentm");
+    if (start != 0L) {
+      builder = builder.setStart(Utils.secondsToDate(start));
+    }
+
+    if (json.has("closetm")) {
+      final long close = json.getLong("closetm");
+      if (close != 0L) {
+        builder = builder.setClose(Utils.secondsToDate(close));
+      }
+    }
+
+    return builder.build();
   }
 
   /**
@@ -169,7 +249,7 @@ public class Kraken implements Exchange {
       throw new ApiException(method.name() + ": " + error.join(", "));
     }
 
-    return json;
+    return json.getJSONObject("result");
   }
 
   private JSONObject query(final Method method, final Map<String, String> params)
@@ -225,12 +305,13 @@ public class Kraken implements Exchange {
   private static final Map<Currency, String> CURRENCY_NAMES;
   static {
     final Map<Currency, String> tmp = new HashMap<>();
-    tmp.put(Currency.XBT, "XXBT");
     tmp.put(Currency.EUR, "ZEUR");
+    tmp.put(Currency.XBT, "XXBT");
+    tmp.put(Currency.XDG, "XXDG");
     CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
   }
 
-  private String getCurrencyPairName(final CurrencyPair currencyPair) {
+  private String getPairName(final AssetPair currencyPair) {
     return Kraken.CURRENCY_NAMES.get(currencyPair.base) + Kraken.CURRENCY_NAMES.get(currencyPair.quote);
   }
 }

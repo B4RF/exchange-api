@@ -40,7 +40,7 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public List<Order> getClosed() throws ApiException {
+  public List<Order> getClosed(final LocalDateTime since) throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 

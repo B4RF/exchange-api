@@ -1,5 +1,5 @@
 package com.barf.exchangeapi.domain;
 
-public enum OrderType {
-  MARKET, LIMIT;
+public enum OrderAction {
+  BUY, SELL;
 }

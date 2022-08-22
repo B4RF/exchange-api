@@ -26,7 +26,7 @@ public interface Exchange {
 
   public List<Order> getOpen() throws ApiException;
 
-  public List<Order> getClosed() throws ApiException;
+  public List<Order> getClosed(LocalDateTime since) throws ApiException;
 
   public boolean createOrder(Order order) throws ApiException;
 
