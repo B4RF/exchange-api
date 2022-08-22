@@ -7,7 +7,9 @@ import java.util.Set;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
+import com.barf.exchangeapi.domain.OrderAction;
 import com.barf.exchangeapi.domain.OrderStatus;
+import com.barf.exchangeapi.domain.Price;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
 import com.barf.exchangeapi.exchanges.ApiException;
@@ -46,7 +48,12 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public boolean createOrder(final Order order) throws ApiException {
+  public List<String> createMarketOrder(final OrderAction action, final Volume volume) throws ApiException {
+    throw new ApiException("endpoint not implemented");
+  }
+
+  @Override
+  public List<String> createLimitOrder(final OrderAction action, final Volume volume, final Price price) throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 

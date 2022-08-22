@@ -36,11 +36,6 @@ import com.barf.exchangeapi.logic.Utils;
 
 public class Kraken implements Exchange {
 
-  private static final String KRAKEN_UNAVAILABLE = "EService:Unavailable";
-  private static final String KRAKEN_BUSY = "EService:Busy";
-  private static final String KRAKEN_UNKNOWN_ORDER = "EOrder:Unknown order";
-  private static final String KRAKEN_CANCEL_PENDING = "WOrder:Cancel pending";
-
   private static final String PUBLIC_URL = "https://api.kraken.com/0/public/";
   private static final String PRIVATE_URL = "https://api.kraken.com/0/private/";
 
@@ -172,8 +167,72 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public boolean createOrder(final Order order) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+  public List<String> createMarketOrder(final OrderAction action, final Volume volume) throws ApiException {
+    final AssetPair pair = AssetPair.XBTEUR;
+
+    String oflags;
+    if (volume.currency == pair.base) {
+      oflags = "fciq";
+    } else if (volume.currency == pair.quote) {
+      oflags = "fciq,viqc";
+    } else {
+      throw new ApiException("Volume currency does not match asset pair");
+    }
+
+    final Map<String, String> input = new HashMap<>();
+    input.put("pair", pair.name());
+    input.put("ordertype", "market");
+    input.put("type", action.name().toLowerCase());
+    input.put("volume", String.valueOf(volume.amount));
+    input.put("oflags", oflags);
+
+    final JSONObject json = this.callEndpoint(Method.ADD_ORDER, input);
+    final JSONArray txids = json.getJSONArray("txid");
+
+    final List<String> orders = new ArrayList<>();
+
+    for (int i = 0; i < txids.length(); i++) {
+      orders.add(txids.getString(i));
+    }
+
+    return orders;
+  }
+
+  @Override
+  public List<String> createLimitOrder(final OrderAction action, final Volume volume, final Price price) throws ApiException {
+    final AssetPair pair = AssetPair.XBTEUR;
+
+    String oflags;
+    if (volume.currency == pair.base) {
+      oflags = "fciq";
+    } else if (volume.currency == pair.quote) {
+      oflags = "fciq,viqc";
+    } else {
+      throw new ApiException("Volume currency does not match asset pair");
+    }
+
+    if (price.currency != pair.quote) {
+      throw new ApiException("price currency does not match asset pair");
+    }
+
+    final Map<String, String> input = new HashMap<>();
+    input.put("pair", pair.name());
+    input.put("ordertype", "limit");
+    input.put("type", action.name().toLowerCase());
+    input.put("price", String.valueOf(price.amount));
+    input.put("volume", String.valueOf(volume.amount));
+    input.put("oflags", oflags);
+
+    final JSONObject json = this.callEndpoint(Method.ADD_ORDER, input);
+    final JSONArray txids = json.getJSONArray("txid");
+
+    final List<String> orders = new ArrayList<>();
+
+    for (int i = 0; i < txids.length(); i++) {
+      orders.add(txids.getString(i));
+    }
+
+    return orders;
   }
 
   @Override

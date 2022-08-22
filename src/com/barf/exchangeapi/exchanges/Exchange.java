@@ -7,7 +7,9 @@ import java.util.Set;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
+import com.barf.exchangeapi.domain.OrderAction;
 import com.barf.exchangeapi.domain.OrderStatus;
+import com.barf.exchangeapi.domain.Price;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
 
@@ -29,7 +31,9 @@ public interface Exchange {
 
   public List<Order> getClosed(LocalDateTime since) throws ApiException;
 
-  public boolean createOrder(Order order) throws ApiException;
+  public List<String> createMarketOrder(OrderAction action, Volume volume) throws ApiException;
+
+  public List<String> createLimitOrder(OrderAction action, Volume volume, Price price) throws ApiException;
 
   public Order getOrder(String id) throws ApiException;
 
