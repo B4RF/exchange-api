@@ -21,8 +21,7 @@ dependencies {
 	implementation 'org.json:json:20220320'
 }
 
-jar {
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+java {
+	withSourcesJar()
+	withJavadocJar()
 }
