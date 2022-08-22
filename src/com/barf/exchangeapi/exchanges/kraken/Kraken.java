@@ -178,12 +178,30 @@ public class Kraken implements Exchange {
 
   @Override
   public Order getOrder(final String id) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final Map<String, String> input = new HashMap<>();
+    input.put("txid", id);
+
+    final JSONObject json = this.callEndpoint(Method.QUERY_ORDERS, input);
+
+    return this.fromJSON(id, json.getJSONObject(id));
   }
 
   @Override
-  public boolean cancelOrder(final String id) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+  public OrderStatus cancelOrder(final String id) throws ApiException {
+    final Map<String, String> input = new HashMap<>();
+    input.put("txid", id);
+
+    final JSONObject json = this.callEndpoint(Method.CANCEL_ORDER, input);
+
+    OrderStatus status = OrderStatus.UNKNOWN;
+
+    if (json.getInt("count") > 0) {
+      status = OrderStatus.CANCELED;
+    } else if (json.getBoolean("pending")) {
+      status = OrderStatus.PENDING;
+    }
+
+    return status;
   }
 
   private Order fromJSON(final String id, final JSONObject json) {

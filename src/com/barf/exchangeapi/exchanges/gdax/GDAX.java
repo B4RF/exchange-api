@@ -7,6 +7,7 @@ import java.util.Set;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
+import com.barf.exchangeapi.domain.OrderStatus;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
 import com.barf.exchangeapi.exchanges.ApiException;
@@ -55,7 +56,7 @@ public class GDAX implements Exchange {
   }
 
   @Override
-  public boolean cancelOrder(final String id) throws ApiException {
+  public OrderStatus cancelOrder(final String id) throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 

@@ -7,6 +7,7 @@ import java.util.Set;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
+import com.barf.exchangeapi.domain.OrderStatus;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
 
@@ -32,6 +33,6 @@ public interface Exchange {
 
   public Order getOrder(String id) throws ApiException;
 
-  public boolean cancelOrder(String id) throws ApiException;
+  public OrderStatus cancelOrder(String id) throws ApiException;
 
 }
