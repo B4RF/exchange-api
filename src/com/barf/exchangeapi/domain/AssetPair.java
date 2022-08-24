@@ -7,11 +7,19 @@ public enum AssetPair {
   XDGEUR(Currency.XDG, Currency.EUR);
   //@formatter:on
 
-  public Currency base;
-  public Currency quote;
+  private final Currency base;
+  private final Currency quote;
 
   private AssetPair(final Currency baseCurrency, final Currency quoteCurrency) {
     this.base = baseCurrency;
     this.quote = quoteCurrency;
+  }
+
+  public Currency getBase() {
+    return this.base;
+  }
+
+  public Currency getQuote() {
+    return this.quote;
   }
 }

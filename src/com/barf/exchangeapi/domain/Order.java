@@ -4,19 +4,19 @@ import java.time.LocalDateTime;
 
 public class Order {
 
-  public final String txid;
-  public final OrderStatus status;
-  public final AssetPair pair;
-  public final OrderAction action;
-  public final OrderType type;
-  public final Volume volume;
-  public final Price price;
-  public final LocalDateTime start;
-  public final LocalDateTime close;
-  public final Volume execVolume;
+  private final String id;
+  private final OrderStatus status;
+  private final AssetPair pair;
+  private final OrderAction action;
+  private final OrderType type;
+  private final Volume volume;
+  private final Price price;
+  private final LocalDateTime start;
+  private final LocalDateTime close;
+  private final Volume execVolume;
 
   private Order(final Builder builder) {
-    this.txid = builder.txid;
+    this.id = builder.id;
     this.status = builder.status;
     this.pair = builder.pair;
     this.action = builder.action;
@@ -28,8 +28,48 @@ public class Order {
     this.execVolume = builder.execVolume;
   }
 
+  public String getId() {
+    return this.id;
+  }
+
+  public OrderStatus getStatus() {
+    return this.status;
+  }
+
+  public AssetPair getPair() {
+    return this.pair;
+  }
+
+  public OrderAction getAction() {
+    return this.action;
+  }
+
+  public OrderType getType() {
+    return this.type;
+  }
+
+  public Volume getVolume() {
+    return this.volume;
+  }
+
+  public Price getPrice() {
+    return this.price;
+  }
+
+  public LocalDateTime getStart() {
+    return this.start;
+  }
+
+  public LocalDateTime getClose() {
+    return this.close;
+  }
+
+  public Volume getExecVolume() {
+    return this.execVolume;
+  }
+
   public static class Builder {
-    private String txid;
+    private String id;
     private OrderStatus status;
     private AssetPair pair;
     private OrderAction action;
@@ -44,8 +84,8 @@ public class Order {
       return new Order(this);
     }
 
-    public Builder setId(final String txid) {
-      this.txid = txid;
+    public Builder setId(final String id) {
+      this.id = id;
       return this;
     }
 

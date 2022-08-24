@@ -8,7 +8,7 @@ public enum Currency {
   XDG("\u00D0");
   //@formatter:on
 
-  String unicode;
+  private final String unicode;
 
   private Currency(final String unicode) {
     this.unicode = unicode;

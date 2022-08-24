@@ -4,12 +4,20 @@ import java.math.BigDecimal;
 
 public class Ticker {
 
-  public final Price ask;
-  public final Price bid;
+  private final Price ask;
+  private final Price bid;
 
   private Ticker(final Builder builder) {
     this.ask = new Price(builder.ask, builder.currency);
     this.bid = new Price(builder.bid, builder.currency);
+  }
+
+  public Price getAsk() {
+    return this.ask;
+  }
+
+  public Price getBid() {
+    return this.bid;
   }
 
   public static class Builder {
@@ -36,5 +44,4 @@ public class Ticker {
       return this;
     }
   }
-
 }

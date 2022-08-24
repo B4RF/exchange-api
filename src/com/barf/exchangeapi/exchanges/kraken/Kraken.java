@@ -71,7 +71,7 @@ public class Kraken implements Exchange {
     final JSONObject currencyPair = json.getJSONObject(this.getPairName(pair));
 
     return new Ticker.Builder()
-        .setCurrency(pair.quote)
+        .setCurrency(pair.getQuote())
         .setAsk(currencyPair.getJSONArray("a").getBigDecimal(0))
         .setBid(currencyPair.getJSONArray("b").getBigDecimal(0))
         .build();
@@ -83,7 +83,7 @@ public class Kraken implements Exchange {
 
     final Map<String, String> input = new HashMap<>();
     input.put("pair", pair.name());
-    input.put("interval", String.valueOf(interval.minutes));
+    input.put("interval", String.valueOf(interval.getMinutes()));
     if (since != null) {
       input.put("since", String.valueOf(Utils.dateToSeconds(since)));
     }
@@ -97,7 +97,7 @@ public class Kraken implements Exchange {
 
       final OHLC ohlc = new OHLC.Builder()
           .setDate(Utils.secondsToDate(entry.getLong(0)))
-          .setCurrency(pair.quote)
+          .setCurrency(pair.getQuote())
           .setOpen(entry.getBigDecimal(1))
           .setHigh(entry.getBigDecimal(2))
           .setLow(entry.getBigDecimal(3))
@@ -171,9 +171,9 @@ public class Kraken implements Exchange {
     final AssetPair pair = AssetPair.XBTEUR;
 
     String oflags;
-    if (volume.currency == pair.base) {
+    if (volume.getCurrency() == pair.getBase()) {
       oflags = "fciq";
-    } else if (volume.currency == pair.quote) {
+    } else if (volume.getCurrency() == pair.getQuote()) {
       oflags = "fciq,viqc";
     } else {
       throw new ApiException("Volume currency does not match asset pair");
@@ -183,7 +183,7 @@ public class Kraken implements Exchange {
     input.put("pair", pair.name());
     input.put("ordertype", "market");
     input.put("type", action.name().toLowerCase());
-    input.put("volume", String.valueOf(volume.amount));
+    input.put("volume", String.valueOf(volume.getAmount()));
     input.put("oflags", oflags);
 
     final JSONObject json = this.callEndpoint(Method.ADD_ORDER, input);
@@ -203,15 +203,15 @@ public class Kraken implements Exchange {
     final AssetPair pair = AssetPair.XBTEUR;
 
     String oflags;
-    if (volume.currency == pair.base) {
+    if (volume.getCurrency() == pair.getBase()) {
       oflags = "fciq";
-    } else if (volume.currency == pair.quote) {
+    } else if (volume.getCurrency() == pair.getQuote()) {
       oflags = "fciq,viqc";
     } else {
       throw new ApiException("Volume currency does not match asset pair");
     }
 
-    if (price.currency != pair.quote) {
+    if (price.getCurrency() != pair.getQuote()) {
       throw new ApiException("price currency does not match asset pair");
     }
 
@@ -219,8 +219,8 @@ public class Kraken implements Exchange {
     input.put("pair", pair.name());
     input.put("ordertype", "limit");
     input.put("type", action.name().toLowerCase());
-    input.put("price", String.valueOf(price.amount));
-    input.put("volume", String.valueOf(volume.amount));
+    input.put("price", String.valueOf(price.getAmount()));
+    input.put("volume", String.valueOf(volume.getAmount()));
     input.put("oflags", oflags);
 
     final JSONObject json = this.callEndpoint(Method.ADD_ORDER, input);
@@ -269,7 +269,7 @@ public class Kraken implements Exchange {
     final AssetPair assetPair = AssetPair.valueOf(descr.getString("pair"));
     final OrderType orderType = OrderType.valueOf(descr.getString("ordertype").toUpperCase());
 
-    final Currency volumeCurrency = json.getString("oflags").contains("viqc") ? assetPair.quote : assetPair.base;
+    final Currency volumeCurrency = json.getString("oflags").contains("viqc") ? assetPair.getQuote() : assetPair.getBase();
 
     Order.Builder builder = new Order.Builder()
         .setId(id)
@@ -281,9 +281,9 @@ public class Kraken implements Exchange {
         .setExecVolume(new Volume(json.getBigDecimal("vol_exec"), volumeCurrency));
 
     if (orderType == OrderType.LIMIT) {
-      builder = builder.setPrice(new Price(descr.getBigDecimal("price"), assetPair.quote));
+      builder = builder.setPrice(new Price(descr.getBigDecimal("price"), assetPair.getQuote()));
     } else if (json.has("price")) {
-      builder = builder.setPrice(new Price(json.getBigDecimal("price"), assetPair.quote));
+      builder = builder.setPrice(new Price(json.getBigDecimal("price"), assetPair.getQuote()));
     }
 
     final long start = json.getLong("opentm");
@@ -389,6 +389,6 @@ public class Kraken implements Exchange {
   }
 
   private String getPairName(final AssetPair currencyPair) {
-    return Kraken.CURRENCY_NAMES.get(currencyPair.base) + Kraken.CURRENCY_NAMES.get(currencyPair.quote);
+    return Kraken.CURRENCY_NAMES.get(currencyPair.getBase()) + Kraken.CURRENCY_NAMES.get(currencyPair.getQuote());
   }
 }

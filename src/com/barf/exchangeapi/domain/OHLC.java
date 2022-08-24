@@ -5,11 +5,11 @@ import java.time.LocalDateTime;
 
 public class OHLC {
 
-  public final LocalDateTime date;
-  public final Price open;
-  public final Price high;
-  public final Price low;
-  public final Price close;
+  private final LocalDateTime date;
+  private final Price open;
+  private final Price high;
+  private final Price low;
+  private final Price close;
 
   private OHLC(final Builder builder) {
     this.date = builder.date;
@@ -17,6 +17,26 @@ public class OHLC {
     this.high = new Price(builder.high, builder.currency);
     this.low = new Price(builder.low, builder.currency);
     this.close = new Price(builder.close, builder.currency);
+  }
+
+  public LocalDateTime getDate() {
+    return this.date;
+  }
+
+  public Price getOpen() {
+    return this.open;
+  }
+
+  public Price getHigh() {
+    return this.high;
+  }
+
+  public Price getLow() {
+    return this.low;
+  }
+
+  public Price getClose() {
+    return this.close;
   }
 
   public static class Builder {
