@@ -49,8 +49,10 @@ public class Kraken implements Exchange {
   static {
     final Map<Currency, String> tmp = new HashMap<>();
     tmp.put(Currency.EUR, "ZEUR");
-    tmp.put(Currency.XBT, "XXBT");
-    tmp.put(Currency.XDG, "XXDG");
+    tmp.put(Currency.USD, "ZUSD");
+    tmp.put(Currency.BTC, "XXBT");
+    tmp.put(Currency.ETH, "XETH");
+    tmp.put(Currency.DOGE, "XXDG");
     CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
   }
 
@@ -62,8 +64,15 @@ public class Kraken implements Exchange {
     this.secret = secret;
   }
 
-  private String getPairName(final AssetPair currencyPair) {
-    return Kraken.CURRENCY_NAMES.get(currencyPair.getBase()) + Kraken.CURRENCY_NAMES.get(currencyPair.getQuote());
+  private String getPairName(final AssetPair assetPair) {
+    if (assetPair.getBase() == Currency.DOGE) {
+      return this.getShortPairName(assetPair);
+    }
+    return Kraken.CURRENCY_NAMES.get(assetPair.getBase()) + Kraken.CURRENCY_NAMES.get(assetPair.getQuote());
+  }
+
+  private String getShortPairName(final AssetPair assetPair) {
+    return Kraken.CURRENCY_NAMES.get(assetPair.getBase()).substring(1) + Kraken.CURRENCY_NAMES.get(assetPair.getQuote()).substring(1);
   }
 
   @Override
@@ -90,35 +99,31 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public Ticker getTicker() throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
+  public Ticker getTicker(final AssetPair assetPair) throws ApiException {
     final Map<String, String> input = new HashMap<>();
-    input.put("pair", pair.name());
+    input.put("pair", this.getShortPairName(assetPair));
 
     final JSONObject json = this.callEndpoint(Method.TICKER, input);
-    final JSONObject currencyPair = json.getJSONObject(this.getPairName(pair));
+    final JSONObject currencyPair = json.getJSONObject(this.getPairName(assetPair));
 
     return new Ticker.Builder()
-        .setCurrency(pair.getQuote())
+        .setCurrency(assetPair.getQuote())
         .setAsk(currencyPair.getJSONArray("a").getBigDecimal(0))
         .setBid(currencyPair.getJSONArray("b").getBigDecimal(0))
         .build();
   }
 
   @Override
-  public List<OHLC> getOHLC(final Interval interval, final LocalDateTime since) throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
+  public List<OHLC> getOHLC(final AssetPair assetPair, final Interval interval, final LocalDateTime since) throws ApiException {
     final Map<String, String> input = new HashMap<>();
-    input.put("pair", pair.name());
+    input.put("pair", this.getShortPairName(assetPair));
     input.put("interval", String.valueOf(interval.getMinutes()));
     if (since != null) {
       input.put("since", String.valueOf(Utils.dateToSeconds(since)));
     }
 
     final JSONObject json = this.callEndpoint(Method.OHLC, input);
-    final JSONArray currencyPair = json.getJSONArray(this.getPairName(pair));
+    final JSONArray currencyPair = json.getJSONArray(this.getPairName(assetPair));
 
     final List<OHLC> ohlcList = new ArrayList<>();
     for (int i = 0; i < currencyPair.length(); i++) {
@@ -126,7 +131,7 @@ public class Kraken implements Exchange {
 
       final OHLC ohlc = new OHLC.Builder()
           .setDate(Utils.secondsToDate(entry.getLong(0)))
-          .setCurrency(pair.getQuote())
+          .setCurrency(assetPair.getQuote())
           .setOpen(entry.getBigDecimal(1))
           .setHigh(entry.getBigDecimal(2))
           .setLow(entry.getBigDecimal(3))
@@ -140,7 +145,7 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public Set<Volume> getBalance() throws ApiException {
+  public Set<Volume> getPortfolio() throws ApiException {
     final JSONObject json = this.callEndpoint(Method.BALANCE, null);
 
     final Set<Volume> balances = new HashSet<>();
@@ -196,20 +201,18 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public List<String> createMarketOrder(final OrderAction action, final Volume volume) throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
+  public List<String> createMarketOrder(final AssetPair assetPair, final OrderAction action, final Volume volume) throws ApiException {
     String oflags;
-    if (volume.getCurrency() == pair.getBase()) {
+    if (volume.getCurrency() == assetPair.getBase()) {
       oflags = "fciq";
-    } else if (volume.getCurrency() == pair.getQuote()) {
+    } else if (volume.getCurrency() == assetPair.getQuote()) {
       oflags = "fciq,viqc";
     } else {
       throw new ApiException("Volume currency does not match asset pair");
     }
 
     final Map<String, String> input = new HashMap<>();
-    input.put("pair", pair.name());
+    input.put("pair", this.getShortPairName(assetPair));
     input.put("ordertype", "market");
     input.put("type", action.name().toLowerCase());
     input.put("volume", String.valueOf(volume.getAmount()));
@@ -228,24 +231,23 @@ public class Kraken implements Exchange {
   }
 
   @Override
-  public List<String> createLimitOrder(final OrderAction action, final Volume volume, final Price price) throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
+  public List<String> createLimitOrder(final AssetPair assetPair, final OrderAction action, final Volume volume, final Price price)
+      throws ApiException {
     String oflags;
-    if (volume.getCurrency() == pair.getBase()) {
+    if (volume.getCurrency() == assetPair.getBase()) {
       oflags = "fciq";
-    } else if (volume.getCurrency() == pair.getQuote()) {
+    } else if (volume.getCurrency() == assetPair.getQuote()) {
       oflags = "fciq,viqc";
     } else {
       throw new ApiException("Volume currency does not match asset pair");
     }
 
-    if (price.getCurrency() != pair.getQuote()) {
+    if (price.getCurrency() != assetPair.getQuote()) {
       throw new ApiException("price currency does not match asset pair");
     }
 
     final Map<String, String> input = new HashMap<>();
-    input.put("pair", pair.name());
+    input.put("pair", this.getShortPairName(assetPair));
     input.put("ordertype", "limit");
     input.put("type", action.name().toLowerCase());
     input.put("price", String.valueOf(price.getAmount()));
@@ -292,10 +294,10 @@ public class Kraken implements Exchange {
     return status;
   }
 
-  private Order fromJSON(final String id, final JSONObject json) {
+  private Order fromJSON(final String id, final JSONObject json) throws JSONException, ApiException {
     final JSONObject descr = json.getJSONObject("descr");
 
-    final AssetPair assetPair = AssetPair.valueOf(descr.getString("pair"));
+    final AssetPair assetPair = this.parseAssetPair(descr.getString("pair"));
     final OrderType orderType = OrderType.valueOf(descr.getString("ordertype").toUpperCase());
 
     final Currency volumeCurrency = json.getString("oflags").contains("viqc") ? assetPair.getQuote() : assetPair.getBase();
@@ -328,6 +330,22 @@ public class Kraken implements Exchange {
     }
 
     return builder.build();
+  }
+
+  private AssetPair parseAssetPair(final String pair) throws ApiException {
+    for (final Entry<Currency, String> entryBase : Kraken.CURRENCY_NAMES.entrySet()) {
+      if (pair.startsWith(entryBase.getValue().substring(1))) {
+        final String quote = pair.substring(entryBase.getValue().length() - 1);
+
+        for (final Entry<Currency, String> entryQuote : Kraken.CURRENCY_NAMES.entrySet()) {
+          if (entryQuote.getValue().substring(1).equals(quote)) {
+            return AssetPair.fromCurrencies(entryBase.getKey(), entryQuote.getKey());
+          }
+        }
+      }
+    }
+
+    throw new ApiException("Unknown asset pair: " + pair);
   }
 
   /**

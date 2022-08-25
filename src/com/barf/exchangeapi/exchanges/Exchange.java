@@ -25,21 +25,21 @@ public interface Exchange {
 
   public LocalDateTime getServerTime() throws ApiException;
 
-  public Ticker getTicker() throws ApiException;
+  public Ticker getTicker(AssetPair assetPair) throws ApiException;
 
-  public List<OHLC> getOHLC(Interval interval, LocalDateTime since) throws ApiException;
+  public List<OHLC> getOHLC(AssetPair assetPair, Interval interval, LocalDateTime since) throws ApiException;
 
   // user data
 
-  public Set<Volume> getBalance() throws ApiException;
+  public Set<Volume> getPortfolio() throws ApiException;
 
   public List<Order> getOpen() throws ApiException;
 
   public List<Order> getClosed(LocalDateTime since) throws ApiException;
 
-  public List<String> createMarketOrder(OrderAction action, Volume volume) throws ApiException;
+  public List<String> createMarketOrder(AssetPair assetPair, OrderAction action, Volume volume) throws ApiException;
 
-  public List<String> createLimitOrder(OrderAction action, Volume volume, Price price) throws ApiException;
+  public List<String> createLimitOrder(AssetPair assetPair, OrderAction action, Volume volume, Price price) throws ApiException;
 
   public Order getOrder(String id) throws ApiException;
 

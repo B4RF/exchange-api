@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import com.barf.exchangeapi.domain.AssetPair;
 import com.barf.exchangeapi.domain.AssetPairInfo;
+import com.barf.exchangeapi.domain.Currency;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
@@ -49,11 +50,15 @@ public class Coinbase implements Exchange {
   private static final String POST_REQUEST = "POST";
   private static final String DELETE_REQUEST = "DELETE";
 
-  private static final Map<AssetPair, String> ASSET_PAIR_NAMES;
+  private static final Map<Currency, String> CURRENCY_NAMES;
   static {
-    final Map<AssetPair, String> tmp = new HashMap<>();
-    tmp.put(AssetPair.XBTEUR, "BTC-EUR");
-    ASSET_PAIR_NAMES = Collections.unmodifiableMap(tmp);
+    final Map<Currency, String> tmp = new HashMap<>();
+    tmp.put(Currency.EUR, "EUR");
+    tmp.put(Currency.USD, "USD");
+    tmp.put(Currency.BTC, "BTC");
+    tmp.put(Currency.ETH, "ETH");
+    tmp.put(Currency.DOGE, "DOGE");
+    CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
   }
 
   private final String key;
@@ -66,8 +71,8 @@ public class Coinbase implements Exchange {
     this.passphrase = passphrase;
   }
 
-  private String getPairName(final AssetPair currencyPair) {
-    return Coinbase.ASSET_PAIR_NAMES.get(currencyPair);
+  private String getPairName(final AssetPair assetPair) {
+    return Coinbase.CURRENCY_NAMES.get(assetPair.getBase()) + "-" + Coinbase.CURRENCY_NAMES.get(assetPair.getQuote());
   }
 
   @Override
@@ -90,22 +95,19 @@ public class Coinbase implements Exchange {
   }
 
   @Override
-  public Ticker getTicker() throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
-    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + this.getPairName(pair) + "/ticker", null);
+  public Ticker getTicker(final AssetPair assetPair) throws ApiException {
+    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + this.getPairName(assetPair) + "/ticker",
+        null);
 
     return new Ticker.Builder()
-        .setCurrency(pair.getQuote())
+        .setCurrency(assetPair.getQuote())
         .setAsk(json.getBigDecimal("ask"))
         .setBid(json.getBigDecimal("bid"))
         .build();
   }
 
   @Override
-  public List<OHLC> getOHLC(final Interval interval, final LocalDateTime since) throws ApiException {
-    final AssetPair pair = AssetPair.XBTEUR;
-
+  public List<OHLC> getOHLC(final AssetPair assetPair, final Interval interval, final LocalDateTime since) throws ApiException {
     if (interval == Interval.WEEK) {
       throw new ApiException("Coinbase doesn't support an ohlc granularity of week");
     }
@@ -117,7 +119,7 @@ public class Coinbase implements Exchange {
     input.put("end", LocalDateTime.now().toString());
 
     final JSONArray json = this.callArrayEndpoint(false, Coinbase.GET_REQUEST,
-        "/products/" + this.getPairName(pair) + "/candles" + this.createParamURL(input), null);
+        "/products/" + this.getPairName(assetPair) + "/candles" + this.createParamURL(input), null);
 
     final List<OHLC> ohlcList = new ArrayList<>();
     for (int i = 0; i < json.length(); i++) {
@@ -125,7 +127,7 @@ public class Coinbase implements Exchange {
 
       final OHLC ohlc = new OHLC.Builder()
           .setDate(Utils.secondsToDate(entry.getLong(0)))
-          .setCurrency(pair.getQuote())
+          .setCurrency(assetPair.getQuote())
           .setOpen(entry.getBigDecimal(3))
           .setHigh(entry.getBigDecimal(2))
           .setLow(entry.getBigDecimal(1))
@@ -139,7 +141,7 @@ public class Coinbase implements Exchange {
   }
 
   @Override
-  public Set<Volume> getBalance() throws ApiException {
+  public Set<Volume> getPortfolio() throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
@@ -154,12 +156,13 @@ public class Coinbase implements Exchange {
   }
 
   @Override
-  public List<String> createMarketOrder(final OrderAction action, final Volume volume) throws ApiException {
+  public List<String> createMarketOrder(final AssetPair assetPair, final OrderAction action, final Volume volume) throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
   @Override
-  public List<String> createLimitOrder(final OrderAction action, final Volume volume, final Price price) throws ApiException {
+  public List<String> createLimitOrder(final AssetPair assetPair, final OrderAction action, final Volume volume, final Price price)
+      throws ApiException {
     throw new ApiException("endpoint not implemented");
   }
 
