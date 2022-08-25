@@ -185,7 +185,7 @@ public class Kraken implements Exchange {
     final JSONObject json = this.callEndpoint(Method.CLOSED_ORDERS, input);
     final JSONObject closed = json.getJSONObject("closed");
 
-    final ArrayList<Order> closedOrders = new ArrayList<>();
+    final List<Order> closedOrders = new ArrayList<>();
 
     if ((closed != null) && (closed.length() > 0)) {
       for (final String id : closed.keySet()) {
@@ -333,19 +333,26 @@ public class Kraken implements Exchange {
   }
 
   private AssetPair parseAssetPair(final String pair) throws ApiException {
-    for (final Entry<Currency, String> entryBase : Kraken.CURRENCY_NAMES.entrySet()) {
+    AssetPair assetPair = null;
+
+    loop: for (final Entry<Currency, String> entryBase : Kraken.CURRENCY_NAMES.entrySet()) {
       if (pair.startsWith(entryBase.getValue().substring(1))) {
         final String quote = pair.substring(entryBase.getValue().length() - 1);
 
         for (final Entry<Currency, String> entryQuote : Kraken.CURRENCY_NAMES.entrySet()) {
           if (entryQuote.getValue().substring(1).equals(quote)) {
-            return AssetPair.fromCurrencies(entryBase.getKey(), entryQuote.getKey());
+            assetPair = AssetPair.fromCurrencies(entryBase.getKey(), entryQuote.getKey());
+            break loop;
           }
         }
       }
     }
 
-    throw new ApiException("Unknown asset pair: " + pair);
+    if (assetPair == null) {
+      throw new ApiException("Unknown asset pair: " + pair);
+    }
+
+    return assetPair;
   }
 
   /**

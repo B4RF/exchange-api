@@ -1,16 +1,21 @@
 package com.barf.exchangeapi.exchanges.coinbase;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.BidiMap;
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+import org.apache.commons.collections4.bidimap.UnmodifiableBidiMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,6 +28,7 @@ import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
 import com.barf.exchangeapi.domain.OrderAction;
 import com.barf.exchangeapi.domain.OrderStatus;
+import com.barf.exchangeapi.domain.OrderType;
 import com.barf.exchangeapi.domain.Price;
 import com.barf.exchangeapi.domain.Ticker;
 import com.barf.exchangeapi.domain.Volume;
@@ -50,15 +56,15 @@ public class Coinbase implements Exchange {
   private static final String POST_REQUEST = "POST";
   private static final String DELETE_REQUEST = "DELETE";
 
-  private static final Map<Currency, String> CURRENCY_NAMES;
+  private static final BidiMap<Currency, String> CURRENCY_NAMES;
   static {
-    final Map<Currency, String> tmp = new HashMap<>();
+    final BidiMap<Currency, String> tmp = new DualHashBidiMap<>();
     tmp.put(Currency.EUR, "EUR");
     tmp.put(Currency.USD, "USD");
     tmp.put(Currency.BTC, "BTC");
     tmp.put(Currency.ETH, "ETH");
     tmp.put(Currency.DOGE, "DOGE");
-    CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
+    CURRENCY_NAMES = UnmodifiableBidiMap.unmodifiableBidiMap(tmp);
   }
 
   private final String key;
@@ -142,17 +148,58 @@ public class Coinbase implements Exchange {
 
   @Override
   public Set<Volume> getPortfolio() throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final JSONArray jsonArray = this.callArrayEndpoint(true, Coinbase.GET_REQUEST, "/accounts", null);
+
+    final Set<Volume> balances = new HashSet<>();
+    for (int i = 0; i < jsonArray.length(); i++) {
+      final JSONObject json = jsonArray.getJSONObject(i);
+
+      final Map<String, Currency> inverse = Coinbase.CURRENCY_NAMES.inverseBidiMap();
+
+      final Currency currency = inverse.get(json.getString("currency"));
+      if (currency != null) {
+        balances.add(new Volume(json.getBigDecimal("balance"), currency));
+      }
+    }
+
+    return balances;
   }
 
   @Override
   public List<Order> getOpen() throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final Map<String, String> input = new HashMap<>();
+    input.put("status", "done");
+
+    final JSONArray jsonArray = this.callArrayEndpoint(true, Coinbase.GET_REQUEST, "/orders" + this.createParamURL(input), null);
+
+    final List<Order> openOrders = new ArrayList<>();
+
+    for (int i = 0; i < jsonArray.length(); i++) {
+      openOrders.add(this.fromJSON(jsonArray.getJSONObject(i)));
+    }
+
+    return openOrders;
   }
 
   @Override
   public List<Order> getClosed(final LocalDateTime since) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final Map<String, String> input = new HashMap<>();
+    input.put("status", "done");
+    input.put("start_date", since.toString());
+
+    final JSONArray jsonArray = this.callArrayEndpoint(true, Coinbase.GET_REQUEST, "/orders" + this.createParamURL(input), null);
+
+    final List<Order> closedOrders = new ArrayList<>();
+
+    for (int i = 0; i < jsonArray.length(); i++) {
+      final Order order = this.fromJSON(jsonArray.getJSONObject(i));
+
+      if (order.getStatus() == OrderStatus.CLOSED) {
+        closedOrders.add(order);
+      }
+    }
+
+    return closedOrders;
   }
 
   @Override
@@ -174,6 +221,60 @@ public class Coinbase implements Exchange {
   @Override
   public OrderStatus cancelOrder(final String id) throws ApiException {
     throw new ApiException("endpoint not implemented");
+  }
+
+  private Order fromJSON(final JSONObject json) throws JSONException, ApiException {
+    final AssetPair assetPair = this.parseAssetPair(json.getString("product_id"));
+    final BigDecimal execVolumeAmount = json.getBigDecimal("filled_size");
+
+    final Order.Builder builder = new Order.Builder()
+        .setId(json.getString("id"))
+        .setStatus(this.parseOrderStatus(json.getString("status"), execVolumeAmount))
+        .setPair(assetPair)
+        .setAction(OrderAction.valueOf(json.getString("side").toUpperCase()))
+        .setType(OrderType.valueOf(json.getString("type").toUpperCase()))
+        .setVolume(new Volume(json.getBigDecimal("size"), assetPair.getBase()))
+        .setPrice(new Price(json.getBigDecimal("price"), assetPair.getQuote()))
+        .setStart(this.parseDate(json.getString("created_at")))
+        .setExecVolume(new Volume(execVolumeAmount, assetPair.getBase()));
+
+    if (json.has("done_at")) {
+      builder.setClose(this.parseDate(json.getString("done_at")));
+    }
+
+    return builder.build();
+  }
+
+  private AssetPair parseAssetPair(final String pair) throws ApiException {
+    final Map<String, Currency> inverse = Coinbase.CURRENCY_NAMES.inverseBidiMap();
+
+    final String[] currencies = pair.split("-");
+    final AssetPair assetPair = AssetPair.fromCurrencies(inverse.get(currencies[0]), inverse.get(currencies[1]));
+
+    if (assetPair == null) {
+      throw new ApiException("Unknown asset pair: " + pair);
+    }
+
+    return assetPair;
+  }
+
+  private OrderStatus parseOrderStatus(final String status, final BigDecimal filledSize) {
+    switch (status) {
+    case "open":
+      return OrderStatus.OPEN;
+    case "pending":
+      return OrderStatus.PENDING;
+    case "rejected":
+      return OrderStatus.CANCELED;
+    case "done":
+      return BigDecimal.ZERO.compareTo(filledSize) == 0 ? OrderStatus.CANCELED : OrderStatus.CLOSED;
+    default:
+      return OrderStatus.UNKNOWN;
+    }
+  }
+
+  private LocalDateTime parseDate(final String dateString) {
+    return LocalDateTime.parse(dateString.substring(0, 16), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
   }
 
   private JSONObject callObjectEndpoint(final boolean isPrivate, final String requestMethod, final String path,

@@ -18,7 +18,8 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-	implementation 'org.json:json:20220320'
+	implementation 'org.json:json:20220320',
+		'org.apache.commons:commons-collections4:4.4'
 }
 
 java {
