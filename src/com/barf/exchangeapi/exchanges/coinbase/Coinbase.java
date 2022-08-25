@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.barf.exchangeapi.domain.AssetPair;
+import com.barf.exchangeapi.domain.AssetPairInfo;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
 import com.barf.exchangeapi.domain.Order;
@@ -48,6 +49,13 @@ public class Coinbase implements Exchange {
   private static final String POST_REQUEST = "POST";
   private static final String DELETE_REQUEST = "DELETE";
 
+  private static final Map<AssetPair, String> ASSET_PAIR_NAMES;
+  static {
+    final Map<AssetPair, String> tmp = new HashMap<>();
+    tmp.put(AssetPair.XBTEUR, "BTC-EUR");
+    ASSET_PAIR_NAMES = Collections.unmodifiableMap(tmp);
+  }
+
   private final String key;
   private final String secret;
   private final String passphrase;
@@ -56,6 +64,21 @@ public class Coinbase implements Exchange {
     this.key = key;
     this.secret = secret;
     this.passphrase = passphrase;
+  }
+
+  private String getPairName(final AssetPair currencyPair) {
+    return Coinbase.ASSET_PAIR_NAMES.get(currencyPair);
+  }
+
+  @Override
+  public AssetPairInfo getInfo(final AssetPair assetPair) throws ApiException {
+    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + this.getPairName(assetPair), null);
+
+    return new AssetPairInfo.Builder()
+        .setBaseDecimals(json.getBigDecimal("base_increment").stripTrailingZeros().scale())
+        .setQuoteDecimals(json.getBigDecimal("quote_increment").stripTrailingZeros().scale())
+        .setMinOrder(new Volume(json.getBigDecimal("quote_increment"), assetPair.getQuote()))
+        .build();
   }
 
   @Override
@@ -240,16 +263,5 @@ public class Coinbase implements Exchange {
     }
 
     return data;
-  }
-
-  private static final Map<AssetPair, String> ASSET_PAIR_NAMES;
-  static {
-    final Map<AssetPair, String> tmp = new HashMap<>();
-    tmp.put(AssetPair.XBTEUR, "BTC-EUR");
-    ASSET_PAIR_NAMES = Collections.unmodifiableMap(tmp);
-  }
-
-  private String getPairName(final AssetPair currencyPair) {
-    return Coinbase.ASSET_PAIR_NAMES.get(currencyPair);
   }
 }

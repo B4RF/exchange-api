@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.barf.exchangeapi.domain.AssetPair;
+import com.barf.exchangeapi.domain.AssetPairInfo;
 import com.barf.exchangeapi.domain.Currency;
 import com.barf.exchangeapi.domain.Interval;
 import com.barf.exchangeapi.domain.OHLC;
@@ -44,12 +45,40 @@ public class Kraken implements Exchange {
   private static final String NONCE = "nonce";
   private static final String MICRO_SECONDS = "000";
 
+  private static final Map<Currency, String> CURRENCY_NAMES;
+  static {
+    final Map<Currency, String> tmp = new HashMap<>();
+    tmp.put(Currency.EUR, "ZEUR");
+    tmp.put(Currency.XBT, "XXBT");
+    tmp.put(Currency.XDG, "XXDG");
+    CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
+  }
+
   private final String key;
   private final String secret;
 
   public Kraken(final String key, final String secret) {
     this.key = key;
     this.secret = secret;
+  }
+
+  private String getPairName(final AssetPair currencyPair) {
+    return Kraken.CURRENCY_NAMES.get(currencyPair.getBase()) + Kraken.CURRENCY_NAMES.get(currencyPair.getQuote());
+  }
+
+  @Override
+  public AssetPairInfo getInfo(final AssetPair assetPair) throws ApiException {
+    final Map<String, String> input = new HashMap<>();
+    input.put("pair", this.getPairName(assetPair));
+
+    final JSONObject json = this.callEndpoint(Method.ASSET_PAIRS, input);
+    final JSONObject currencyPair = json.getJSONObject(this.getPairName(assetPair));
+
+    return new AssetPairInfo.Builder()
+        .setBaseDecimals(currencyPair.getInt("lot_decimals"))
+        .setQuoteDecimals(currencyPair.getInt("pair_decimals"))
+        .setMinOrder(new Volume(currencyPair.getBigDecimal("ordermin"), assetPair.getBase()))
+        .build();
   }
 
   @Override
@@ -377,18 +406,5 @@ public class Kraken implements Exchange {
       }
     }
     return sb.toString();
-  }
-
-  private static final Map<Currency, String> CURRENCY_NAMES;
-  static {
-    final Map<Currency, String> tmp = new HashMap<>();
-    tmp.put(Currency.EUR, "ZEUR");
-    tmp.put(Currency.XBT, "XXBT");
-    tmp.put(Currency.XDG, "XXDG");
-    CURRENCY_NAMES = Collections.unmodifiableMap(tmp);
-  }
-
-  private String getPairName(final AssetPair currencyPair) {
-    return Kraken.CURRENCY_NAMES.get(currencyPair.getBase()) + Kraken.CURRENCY_NAMES.get(currencyPair.getQuote());
   }
 }
