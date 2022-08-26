@@ -257,13 +257,13 @@ public class Kraken implements Exchange {
     final JSONObject json = this.callEndpoint(Method.ADD_ORDER, input);
     final JSONArray txids = json.getJSONArray("txid");
 
-    final List<String> orders = new ArrayList<>();
+    final List<String> ids = new ArrayList<>();
 
     for (int i = 0; i < txids.length(); i++) {
-      orders.add(txids.getString(i));
+      ids.add(txids.getString(i));
     }
 
-    return orders;
+    return ids;
   }
 
   @Override

@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.apache.commons.collections4.bidimap.UnmodifiableBidiMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import com.barf.exchangeapi.domain.AssetPair;
 import com.barf.exchangeapi.domain.AssetPairInfo;
@@ -77,13 +79,13 @@ public class Coinbase implements Exchange {
     this.passphrase = passphrase;
   }
 
-  private String getPairName(final AssetPair assetPair) {
+  private static String getPairName(final AssetPair assetPair) {
     return Coinbase.CURRENCY_NAMES.get(assetPair.getBase()) + "-" + Coinbase.CURRENCY_NAMES.get(assetPair.getQuote());
   }
 
   @Override
   public AssetPairInfo getInfo(final AssetPair assetPair) throws ApiException {
-    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + this.getPairName(assetPair), null);
+    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + Coinbase.getPairName(assetPair), null);
 
     return new AssetPairInfo.Builder()
         .setBaseDecimals(json.getBigDecimal("base_increment").stripTrailingZeros().scale())
@@ -102,7 +104,7 @@ public class Coinbase implements Exchange {
 
   @Override
   public Ticker getTicker(final AssetPair assetPair) throws ApiException {
-    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + this.getPairName(assetPair) + "/ticker",
+    final JSONObject json = this.callObjectEndpoint(false, Coinbase.GET_REQUEST, "/products/" + Coinbase.getPairName(assetPair) + "/ticker",
         null);
 
     return new Ticker.Builder()
@@ -125,7 +127,7 @@ public class Coinbase implements Exchange {
     input.put("end", LocalDateTime.now().toString());
 
     final JSONArray json = this.callArrayEndpoint(false, Coinbase.GET_REQUEST,
-        "/products/" + this.getPairName(assetPair) + "/candles" + this.createParamURL(input), null);
+        "/products/" + Coinbase.getPairName(assetPair) + "/candles" + this.createParamURL(input), null);
 
     final List<OHLC> ohlcList = new ArrayList<>();
     for (int i = 0; i < json.length(); i++) {
@@ -168,7 +170,7 @@ public class Coinbase implements Exchange {
   @Override
   public List<Order> getOpen() throws ApiException {
     final Map<String, String> input = new HashMap<>();
-    input.put("status", "done");
+    input.put("status", "open");
 
     final JSONArray jsonArray = this.callArrayEndpoint(true, Coinbase.GET_REQUEST, "/orders" + this.createParamURL(input), null);
 
@@ -204,23 +206,63 @@ public class Coinbase implements Exchange {
 
   @Override
   public List<String> createMarketOrder(final AssetPair assetPair, final OrderAction action, final Volume volume) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    String volumeParam;
+    if (volume.getCurrency() == assetPair.getBase()) {
+      volumeParam = "size";
+    } else if (volume.getCurrency() == assetPair.getQuote()) {
+      volumeParam = "funds";
+    } else {
+      throw new ApiException("Volume currency does not match asset pair");
+    }
+
+    final Map<String, String> input = new HashMap<>();
+    input.put("product_id", Coinbase.getPairName(assetPair));
+    input.put("side", action.name().toLowerCase());
+    input.put("type", "limit");
+    input.put(volumeParam, String.valueOf(volume.getAmount()));
+    input.put("post_only", "true");
+
+    final JSONObject json = this.callObjectEndpoint(true, Coinbase.POST_REQUEST, "/orders", input);
+
+    return Arrays.asList(json.getString("id"));
   }
 
   @Override
   public List<String> createLimitOrder(final AssetPair assetPair, final OrderAction action, final Volume volume, final Price price)
       throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    if (volume.getCurrency() != assetPair.getBase()) {
+      throw new ApiException("Volume currency does not match asset pair");
+    }
+
+    if (price.getCurrency() != assetPair.getQuote()) {
+      throw new ApiException("price currency does not match asset pair");
+    }
+
+    final Map<String, String> input = new HashMap<>();
+    input.put("product_id", Coinbase.getPairName(assetPair));
+    input.put("side", action.name().toLowerCase());
+    input.put("type", "limit");
+    input.put("price", String.valueOf(price.getAmount()));
+    input.put("size", String.valueOf(volume.getAmount()));
+    input.put("post_only", "true");
+
+    final JSONObject json = this.callObjectEndpoint(true, Coinbase.POST_REQUEST, "/orders", input);
+
+    return Arrays.asList(json.getString("id"));
   }
 
   @Override
   public Order getOrder(final String id) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final JSONObject json = this.callObjectEndpoint(true, Coinbase.GET_REQUEST, "/orders/" + id, null);
+
+    return this.fromJSON(json);
   }
 
   @Override
   public OrderStatus cancelOrder(final String id) throws ApiException {
-    throw new ApiException("endpoint not implemented");
+    final String cancelledId = this.callStringEndpoint(true, Coinbase.DELETE_REQUEST, "/orders/" + id, null);
+
+    return cancelledId.equals("\"" + id + "\"") ? OrderStatus.CANCELED : OrderStatus.UNKNOWN;
   }
 
   private Order fromJSON(final JSONObject json) throws JSONException, ApiException {
@@ -283,7 +325,6 @@ public class Coinbase implements Exchange {
 
     try {
       json = new JSONObject(this.query(isPrivate, requestMethod, path, params));
-
     } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e) {
       throw new ApiException(e);
     }
@@ -313,6 +354,24 @@ public class Coinbase implements Exchange {
     }
 
     return json;
+  }
+
+  private String callStringEndpoint(final boolean isPrivate, final String requestMethod, final String path,
+      final Map<String, String> params) throws ApiException {
+    final String response;
+
+    try {
+      response = this.query(isPrivate, requestMethod, path, params);
+    } catch (InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+      throw new ApiException(e);
+    }
+
+    final Object json = new JSONTokener(response).nextValue();
+    if (json instanceof JSONObject) {
+      throw new ApiException(path + ": " + ((JSONObject) json).getString("message"));
+    }
+
+    return response;
   }
 
   private String query(final boolean isPrivate, final String requestMethod, final String path, final Map<String, String> params)
