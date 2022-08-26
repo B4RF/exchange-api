@@ -230,6 +230,20 @@ public class Kraken implements Exchange {
     return orders;
   }
 
+  /**
+   * Creates a limit order.
+   * 
+   * @param assetPair
+   *          the pair for which the order should be created
+   * @param action
+   *          decides if a buy or sell order is created
+   * @param volume
+   *          the volume of the order in base or quote currency
+   * @param price
+   *          the price of the order in quote currency
+   * @return resulting order ids
+   * @throws ApiException
+   */
   @Override
   public List<String> createLimitOrder(final AssetPair assetPair, final OrderAction action, final Volume volume, final Price price)
       throws ApiException {
