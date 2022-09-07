@@ -1,6 +1,7 @@
 package com.barf.exchangeapi.domain;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class Price {
 
@@ -18,6 +19,23 @@ public class Price {
 
   public Currency getCurrency() {
     return this.currency;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.amount, this.currency);
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Price)) {
+      return false;
+    }
+    final Price other = (Price) obj;
+    return Objects.equals(this.amount, other.amount) && this.currency == other.currency;
   }
 
   @Override

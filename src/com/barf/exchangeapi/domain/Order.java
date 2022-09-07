@@ -1,6 +1,7 @@
 package com.barf.exchangeapi.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Order {
 
@@ -66,6 +67,27 @@ public class Order {
 
   public Volume getExecVolume() {
     return this.execVolume;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.action, this.close, this.execVolume, this.id, this.pair, this.price, this.start, this.status, this.type,
+        this.volume);
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Order)) {
+      return false;
+    }
+    final Order other = (Order) obj;
+    return this.action == other.action && Objects.equals(this.close, other.close) && Objects.equals(this.execVolume, other.execVolume)
+        && Objects.equals(this.id, other.id) && this.pair == other.pair && Objects.equals(this.price, other.price)
+        && Objects.equals(this.start, other.start)
+        && this.status == other.status && this.type == other.type && Objects.equals(this.volume, other.volume);
   }
 
   public static class Builder {

@@ -1,6 +1,7 @@
 package com.barf.exchangeapi.domain;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class Ticker {
 
@@ -18,6 +19,23 @@ public class Ticker {
 
   public Price getBid() {
     return this.bid;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.ask, this.bid);
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Ticker)) {
+      return false;
+    }
+    final Ticker other = (Ticker) obj;
+    return Objects.equals(this.ask, other.ask) && Objects.equals(this.bid, other.bid);
   }
 
   public static class Builder {

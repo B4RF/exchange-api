@@ -2,6 +2,7 @@ package com.barf.exchangeapi.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class OHLC {
 
@@ -37,6 +38,24 @@ public class OHLC {
 
   public Price getClose() {
     return this.close;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.close, this.date, this.high, this.low, this.open);
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof OHLC)) {
+      return false;
+    }
+    final OHLC other = (OHLC) obj;
+    return Objects.equals(this.close, other.close) && Objects.equals(this.date, other.date) && Objects.equals(this.high, other.high)
+        && Objects.equals(this.low, other.low) && Objects.equals(this.open, other.open);
   }
 
   public static class Builder {
