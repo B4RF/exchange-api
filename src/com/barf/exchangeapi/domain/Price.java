@@ -40,6 +40,6 @@ public class Price {
 
   @Override
   public String toString() {
-    return this.amount.toPlainString() + this.currency.toString();
+    return this.amount.stripTrailingZeros().toPlainString() + this.currency.toString();
   }
 }
