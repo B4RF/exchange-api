@@ -86,7 +86,7 @@ public class Kraken implements Exchange {
     return new AssetPairInfo.Builder()
         .setBaseDecimals(currencyPair.getInt("lot_decimals"))
         .setQuoteDecimals(currencyPair.getInt("pair_decimals"))
-        .setMinOrder(new Volume(currencyPair.getBigDecimal("ordermin"), assetPair.getBase()))
+        .setMinOrder(new Volume.Builder().setAmount(currencyPair.getBigDecimal("ordermin")).setCurrency(assetPair.getBase()).build())
         .build();
   }
 
@@ -151,7 +151,7 @@ public class Kraken implements Exchange {
     final Set<Volume> balances = new HashSet<>();
     for (final Entry<Currency, String> entry : Kraken.CURRENCY_NAMES.entrySet()) {
       if (json.has(entry.getValue())) {
-        balances.add(new Volume(json.getBigDecimal(entry.getValue()), entry.getKey()));
+        balances.add(new Volume.Builder().setAmount(json.getBigDecimal(entry.getValue())).setCurrency(entry.getKey()).build());
       }
     }
 
@@ -322,13 +322,13 @@ public class Kraken implements Exchange {
         .setPair(assetPair)
         .setAction(OrderAction.valueOf(descr.getString("type").toUpperCase()))
         .setType(orderType)
-        .setVolume(new Volume(json.getBigDecimal("vol"), volumeCurrency))
-        .setExecVolume(new Volume(json.getBigDecimal("vol_exec"), volumeCurrency));
+        .setVolume(new Volume.Builder().setAmount(json.getBigDecimal("vol")).setCurrency(volumeCurrency).build())
+        .setExecVolume(new Volume.Builder().setAmount(json.getBigDecimal("vol_exec")).setCurrency(volumeCurrency).build());
 
     if (orderType == OrderType.LIMIT) {
-      builder = builder.setPrice(new Price(descr.getBigDecimal("price"), assetPair.getQuote()));
+      builder = builder.setPrice(new Price.Builder().setAmount(descr.getBigDecimal("price")).setCurrency(assetPair.getQuote()).build());
     } else if (json.has("price")) {
-      builder = builder.setPrice(new Price(json.getBigDecimal("price"), assetPair.getQuote()));
+      builder = builder.setPrice(new Price.Builder().setAmount(json.getBigDecimal("price")).setCurrency(assetPair.getQuote()).build());
     }
 
     final long start = json.getLong("opentm");

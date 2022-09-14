@@ -8,9 +8,9 @@ public abstract class CurrencyBasedAmount {
   private final BigDecimal amount;
   private final Currency currency;
 
-  public CurrencyBasedAmount(final BigDecimal amount, final Currency currency) {
-    this.amount = amount;
-    this.currency = currency;
+  protected CurrencyBasedAmount(final Builder<? extends CurrencyBasedAmount> builder) {
+    this.amount = builder.amount;
+    this.currency = builder.currency;
   }
 
   public BigDecimal getAmount() {
@@ -41,5 +41,27 @@ public abstract class CurrencyBasedAmount {
   @Override
   public String toString() {
     return this.amount.stripTrailingZeros().toPlainString() + this.currency.toString();
+  }
+
+  public static abstract class Builder<T extends CurrencyBasedAmount> {
+    private BigDecimal amount;
+    private Currency currency;
+
+    public abstract T build();
+
+    public Builder<T> setAmount(final String amount) {
+      this.amount = new BigDecimal(amount);
+      return this;
+    }
+
+    public Builder<T> setAmount(final BigDecimal amount) {
+      this.amount = amount;
+      return this;
+    }
+
+    public Builder<T> setCurrency(final Currency currency) {
+      this.currency = currency;
+      return this;
+    }
   }
 }

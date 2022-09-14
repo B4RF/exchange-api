@@ -9,8 +9,8 @@ public class Ticker {
   private final Price bid;
 
   private Ticker(final Builder builder) {
-    this.ask = new Price(builder.ask, builder.currency);
-    this.bid = new Price(builder.bid, builder.currency);
+    this.ask = new Price.Builder().setAmount(builder.ask).setCurrency(builder.currency).build();
+    this.bid = new Price.Builder().setAmount(builder.bid).setCurrency(builder.currency).build();
   }
 
   public Price getAsk() {
@@ -52,8 +52,18 @@ public class Ticker {
       return this;
     }
 
+    public Builder setAsk(final String ask) {
+      this.ask = new BigDecimal(ask);
+      return this;
+    }
+
     public Builder setAsk(final BigDecimal ask) {
       this.ask = ask;
+      return this;
+    }
+
+    public Builder setBid(final String bid) {
+      this.bid = new BigDecimal(bid);
       return this;
     }
 

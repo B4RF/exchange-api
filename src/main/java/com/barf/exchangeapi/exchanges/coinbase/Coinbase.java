@@ -90,7 +90,7 @@ public class Coinbase implements Exchange {
     return new AssetPairInfo.Builder()
         .setBaseDecimals(json.getBigDecimal("base_increment").stripTrailingZeros().scale())
         .setQuoteDecimals(json.getBigDecimal("quote_increment").stripTrailingZeros().scale())
-        .setMinOrder(new Volume(json.getBigDecimal("quote_increment"), assetPair.getQuote()))
+        .setMinOrder(new Volume.Builder().setAmount(json.getBigDecimal("quote_increment")).setCurrency(assetPair.getQuote()).build())
         .build();
   }
 
@@ -160,7 +160,7 @@ public class Coinbase implements Exchange {
 
       final Currency currency = inverse.get(json.getString("currency"));
       if (currency != null) {
-        balances.add(new Volume(json.getBigDecimal("balance"), currency));
+        balances.add(new Volume.Builder().setAmount(json.getBigDecimal("balance")).setCurrency(currency).build());
       }
     }
 
@@ -275,10 +275,10 @@ public class Coinbase implements Exchange {
         .setPair(assetPair)
         .setAction(OrderAction.valueOf(json.getString("side").toUpperCase()))
         .setType(OrderType.valueOf(json.getString("type").toUpperCase()))
-        .setVolume(new Volume(json.getBigDecimal("size"), assetPair.getBase()))
-        .setPrice(new Price(json.getBigDecimal("price"), assetPair.getQuote()))
+        .setVolume(new Volume.Builder().setAmount(json.getBigDecimal("size")).setCurrency(assetPair.getBase()).build())
+        .setPrice(new Price.Builder().setAmount(json.getBigDecimal("price")).setCurrency(assetPair.getQuote()).build())
         .setStart(this.parseDate(json.getString("created_at")))
-        .setExecVolume(new Volume(execVolumeAmount, assetPair.getBase()));
+        .setExecVolume(new Volume.Builder().setAmount(execVolumeAmount).setCurrency(assetPair.getBase()).build());
 
     if (json.has("done_at")) {
       builder.setClose(this.parseDate(json.getString("done_at")));

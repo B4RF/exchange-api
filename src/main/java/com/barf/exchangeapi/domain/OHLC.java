@@ -14,10 +14,10 @@ public class OHLC {
 
   private OHLC(final Builder builder) {
     this.date = builder.date;
-    this.open = new Price(builder.open, builder.currency);
-    this.high = new Price(builder.high, builder.currency);
-    this.low = new Price(builder.low, builder.currency);
-    this.close = new Price(builder.close, builder.currency);
+    this.open = new Price.Builder().setAmount(builder.open).setCurrency(builder.currency).build();
+    this.high = new Price.Builder().setAmount(builder.high).setCurrency(builder.currency).build();
+    this.low = new Price.Builder().setAmount(builder.low).setCurrency(builder.currency).build();
+    this.close = new Price.Builder().setAmount(builder.close).setCurrency(builder.currency).build();
   }
 
   public LocalDateTime getDate() {
@@ -80,8 +80,18 @@ public class OHLC {
       return this;
     }
 
+    public Builder setOpen(final String open) {
+      this.open = new BigDecimal(open);
+      return this;
+    }
+
     public Builder setOpen(final BigDecimal open) {
       this.open = open;
+      return this;
+    }
+
+    public Builder setHigh(final String high) {
+      this.high = new BigDecimal(high);
       return this;
     }
 
@@ -90,8 +100,18 @@ public class OHLC {
       return this;
     }
 
+    public Builder setLow(final String low) {
+      this.low = new BigDecimal(low);
+      return this;
+    }
+
     public Builder setLow(final BigDecimal low) {
       this.low = low;
+      return this;
+    }
+
+    public Builder setClose(final String close) {
+      this.close = new BigDecimal(close);
       return this;
     }
 
