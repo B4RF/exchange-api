@@ -1,11 +1,16 @@
 package com.barf.exchangeapi.domain;
 
-import java.math.BigDecimal;
-
 public class Price extends CurrencyBasedAmount {
 
-  public Price(final BigDecimal amount, final Currency currency) {
-    super(amount, currency);
+  private Price(final Builder builder) {
+    super(builder);
   }
 
+  public static class Builder extends CurrencyBasedAmount.Builder<Price> {
+
+    @Override
+    public Price build() {
+      return new Price(this);
+    }
+  }
 }
