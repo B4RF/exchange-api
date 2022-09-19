@@ -31,10 +31,10 @@ public abstract class CurrencyBasedAmount {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof Price)) {
+    if (!(obj instanceof CurrencyBasedAmount)) {
       return false;
     }
-    final Price other = (Price) obj;
+    final CurrencyBasedAmount other = (CurrencyBasedAmount) obj;
     return Objects.equals(this.amount, other.getAmount()) && this.currency == other.getCurrency();
   }
 
