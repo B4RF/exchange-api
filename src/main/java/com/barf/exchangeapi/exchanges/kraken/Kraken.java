@@ -423,6 +423,7 @@ public class Kraken implements Exchange {
     } else {
       final String url = Kraken.PUBLIC_URL + method.getURL();
       request.setURL(url);
+      request.setRequestMethod(ApiRequest.REQUEST_GET);
       request.setPostData(this.createPostData(params));
     }
 
